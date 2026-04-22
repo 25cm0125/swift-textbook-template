@@ -150,7 +150,7 @@ struct SongRow: View {
 
 ```
 
-**このアプリは何をするものか：**
+**このアプリは何をするものか：**　iTunes Search APIを利用して、入力したアーティスト名から楽曲を検索し、一覧表示するアプリです。
 
 （アプリの動作を自分の言葉で説明する。スクリーンショットを貼ってもよい。）
 
@@ -159,11 +159,23 @@ struct SongRow: View {
 ### データモデル（Codable構造体）
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+struct SearchResponse: Codable {
+    let results: [Song]
+}
+
+struct Song: Codable, Identifiable {
+    let trackId: Int
+    let trackName: String
+    let artistName: String
+    let artworkUrl100: String
+    let previewUrl: String?
+
+    var id: Int { trackId }
+}
 ```
 
 **何をしているか：**
-（この部分が果たしている役割を説明する）
+iTunes APIから返ってくるJSONデータを受け取るための「箱（データ構造）」を定義しています。
 
 **なぜこう書くのか：**
 （別の書き方ではなく、この書き方が選ばれている理由を説明する）
