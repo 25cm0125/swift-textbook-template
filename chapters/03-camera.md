@@ -14,29 +14,193 @@
 （教員から配布された模範コードをここに貼り付ける）
 
 ```swift
-// ここに模範コード全体を貼る
+// ============================================
+// 第3章（基本）：写真を選択・撮影して表示するアプリ
+// ============================================
+// PhotosPickerを使ってフォトライブラリから写真を選択し、
+// 画面に表示します。シミュレータでも動作します。
+// ============================================
+
+import SwiftUI
+import PhotosUI
+
+// MARK: - メインビュー
+
+struct ContentView: View {
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedImage: Image?
+    @State private var isShowingCamera = false
+    @State private var capturedUIImage: UIImage?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                // 画像表示エリア
+                imageDisplayArea
+
+                // ボタンエリア
+                HStack(spacing: 20) {
+                    // フォトライブラリから選択
+                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                        Label("ライブラリ", systemImage: "photo.on.rectangle")
+                    }
+                    .buttonStyle(.bordered)
+
+                    // カメラで撮影
+                    Button {
+                        isShowingCamera = true
+                    } label: {
+                        Label("カメラ", systemImage: "camera")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            }
+            .navigationTitle("写真アプリ")
+            .onChange(of: selectedItem) { _, newItem in
+                Task {
+                    await loadImage(from: newItem)
+                }
+            }
+            .fullScreenCover(isPresented: $isShowingCamera) {
+                CameraView(capturedImage: $capturedUIImage)
+            }
+            .onChange(of: capturedUIImage) { _, newImage in
+                if let uiImage = newImage {
+                    selectedImage = Image(uiImage: uiImage)
+                }
+            }
+        }
+    }
+
+    // MARK: - 画像表示エリア
+
+    @ViewBuilder
+    private var imageDisplayArea: some View {
+        if let image = selectedImage {
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxHeight: 400)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(radius: 4)
+                .padding()
+        } else {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.gray.opacity(0.1))
+                .frame(height: 300)
+                .overlay {
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.gray)
+                        Text("写真を選択または撮影してください")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding()
+        }
+    }
+
+    // MARK: - 画像の読み込み
+
+    func loadImage(from item: PhotosPickerItem?) async {
+        guard let item = item else { return }
+
+        do {
+            if let data = try await item.loadTransferable(type: Data.self),
+               let uiImage = UIImage(data: data) {
+                selectedImage = Image(uiImage: uiImage)
+            }
+        } catch {
+            print("画像の読み込みに失敗: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - カメラビュー（UIKit連携）
+
+struct CameraView: UIViewControllerRepresentable {
+    @Binding var capturedImage: UIImage?
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: CameraView
+
+        init(_ parent: CameraView) {
+            self.parent = parent
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.capturedImage = image
+            }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+}
+
 ```
 
 **このアプリは何をするものか：**
 
-（アプリの動作を自分の言葉で説明する。スクリーンショットを貼ってもよい。）
+ユーザーがフォトライブラリから既存の写真を選択するか、カメラを起動して新しく写真を撮影し、取得した画像を画面上に表示するアプリです。
+画像が選択されていない状態ではプレースホルダー(灰色の枠とアイコン)を表示され、カメラアプリの基本の様なアプリです。
 
 ## コードの詳細解説
 
 ### PhotosPickerによる写真選択
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+PhotosPicker(selection: $selectedItem, matching: .images) {
+    Label("ライブラリ", systemImage: "photo.on.rectangle")
+}
+.buttonStyle(.bordered)
+
+// ... (中略) ...
+
+.onChange(of: selectedItem) { _, newItem in
+    Task {
+        await loadImage(from: newItem)
+    }
+}
 ```
 
 **何をしているか：**
-（この部分が果たしている役割を説明する）
+「ライブラリ」というラベルとアイコンを持つボタンを表示し、タップされるとiOS標準の写真選択画面（フォトライブラリ）を呼び出します。
+matching: .images と指定することで、動画などを除外した「画像」のみを選択できるように制限しています。
 
 **なぜこう書くのか：**
-（別の書き方ではなく、この書き方が選ばれている理由を説明する）
+SwiftUIにおける PhotosPicker は、iOS 16以降で推奨されている標準的な実装方法です。
+選択直後に重い画像データそのものを受け取るのではなく、まずは軽量な「参照（PhotosPickerItem）」だけを受け取り、その後、必要なタイミングで非同期（Task と await）に重い画像データを読み込むことで、アプリの画面がカクつくのを防いでいます。
 
 **もしこう書かなかったら：**
-（この部分を省略したり変えたりすると何が起きるか。実際に試した結果があればここに書く）
+非同期処理（Task/await）を使わなかった場合、そもそも PhotosPickerItem から実際の画像データを取り出す loadTransferable(type:) メソッドが非同期専用（async）であるため、Task で囲まないとコンパイルエラーになり、プログラムを動かすことができません。
 
 ---
 
