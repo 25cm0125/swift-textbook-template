@@ -261,14 +261,24 @@ struct SettingsView: View {
 
 **このアプリは何をするものか：**
 
-（アプリの動作を自分の言葉で説明する。スクリーンショットを貼ってもよい。）
+このアプリは、データの永続化（アプリを閉じてもデータが消えない仕組み）を学ぶためのシンプルなメモ帳アプリです。
 
 ## コードの詳細解説
 
 ### SwiftDataモデル（@Model）
 
 ```swift
-// 該当部分のコードを抜粋して貼る
+@Model
+class Memo {
+    var title: String
+    var content: String
+    var createdAt: Date
+    var isFavorite: Bool
+
+    init(title: String, content: String, createdAt: Date = .now, isFavorite: Bool = false) {
+        // ...初期化処理...
+    }
+}
 ```
 
 **何をしているか：**
