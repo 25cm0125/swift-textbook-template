@@ -338,7 +338,8 @@ var filteredLandmarks: [Landmark] {
 - やったこと：
 - 模範コードの Marker を Annotation に書き換え、中身を Text("🗼") などの絵文字や、画像（Image）を表示するカスタムビューに変更してみた。
 - 結果：
-- <img width="379" height="778" alt="スクリーンショット 2026-07-29 14 34 05" src="https://github.com/user-attachments/assets/f8a3ef2b-51e2-423d-a210-a6dc3cc1c3fd" />
+- <img width="379" height="778" alt="スクリーンショット 2026-07-29 14 34 05" src="https://github.com/user-attachments/assets/f8a3ef2b-51e2-423d-a210-a6dc3cc1c3fd" /><img width="371" height="784" alt="スクリーンショット 2026-08-05 15 24 41" src="https://github.com/user-attachments/assets/35cc2c1e-38bc-40a0-bdf9-fb9ce5cf8975" />
+
 
 - わかったこと：
 - アプリ独自の世界観を出したい時や、特定のスポットを目立たせたい時、ユーザーのプロフィールアイコンなどを直接地図に置きたい場合は Annotation を使うと自由にカスタマイズできることがわかった。
